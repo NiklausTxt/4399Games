@@ -47,7 +47,7 @@ npm run check
 npm run deploy
 ```
 
-首页和游戏由 Assets 提供；`/wechat` 与 `/api/*` 会先进入 Worker。配置中保留了现有 `DB` → `dontpanic42-db` 的 D1 绑定。认证接口首次请求时会幂等创建 `users`、`sessions` 和 `scores` 表；相同结构也保存在 `migrations/0001_auth_and_scores.sql`，便于审查和手动迁移。部署前请确认 `dontpanic42.top` 的自定义域名仍绑定到 `dontpanic42-site`。
+首页和游戏由 Assets 提供；`/wechat` 与 `/api/*` 会先进入 Worker。配置中保留了现有 `DB` → `dontpanic42-db` 的 D1 绑定。认证接口首次请求时会幂等创建带游戏命名空间的 `game_users`、`game_sessions` 和 `game_scores` 表，避免与数据库原有业务表冲突；相同结构也保存在 `migrations/0001_auth_and_scores.sql`，便于审查和手动迁移。部署前请确认 `dontpanic42.top` 的自定义域名仍绑定到 `dontpanic42-site`。
 
 仓库已连接 Cloudflare Workers Builds；向 `main` 分支推送提交会自动触发生产部署。
 
