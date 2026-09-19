@@ -1,0 +1,46 @@
+# 2048 · DON'T PANIC 42
+
+一个为手机浏览器设计的 2048 小游戏，准备部署到 Cloudflare Workers，并通过 `dontpanic42.top` 访问。
+
+## 功能
+
+- 手指上下左右滑动，桌面端也支持方向键
+- 实时分数与本机最佳成绩
+- 自动保存当前局面，刷新页面可以继续
+- 胜利和无路可走状态提示
+- 保留已有的微信公众号 `/wechat` 验证与自动回复接口
+- 响应式布局，适配窄屏、刘海屏和横向空间有限的设备
+
+## 本地运行
+
+安装依赖后运行：
+
+```bash
+npm install
+npm run dev
+```
+
+也可以直接用任意静态服务器打开 `dist/` 目录，游戏本身不依赖后端。
+
+## 测试
+
+```bash
+npm test
+npm run check
+```
+
+## 部署到 Cloudflare
+
+1. 在 Cloudflare Worker 中将 `WECHAT_TOKEN` 配置为加密的 Secret。不要把实际值写入仓库。
+2. 确认 `wrangler.jsonc` 中的 Worker 名称 `dontpanic42-site` 与现有服务一致。
+3. 登录 Wrangler 后执行：
+
+```bash
+npm run deploy
+```
+
+静态游戏由 Assets 提供；只有 `/wechat` 会先进入 Worker。部署前请确认 `dontpanic42.top` 的自定义域名仍绑定到 `dontpanic42-site`。
+
+## 凭证安全
+
+仓库不包含 Token、账号或密钥。`WECHAT_TOKEN` 只从 Cloudflare 的运行时 Secret `env.WECHAT_TOKEN` 读取，并用于校验微信请求签名。
