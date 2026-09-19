@@ -39,7 +39,7 @@ npm run check
 npm run deploy
 ```
 
-静态游戏由 Assets 提供；只有 `/wechat` 会先进入 Worker。部署前请确认 `dontpanic42.top` 的自定义域名仍绑定到 `dontpanic42-site`。
+静态游戏由 Assets 提供；只有 `/wechat` 会先进入 Worker。配置中同时保留了现有 `DB` → `dontpanic42-db` 的 D1 绑定。部署前请确认 `dontpanic42.top` 的自定义域名仍绑定到 `dontpanic42-site`。
 
 ## 凭证安全
 
