@@ -227,6 +227,27 @@ async function handleApi(request, env, url) {
     return json({ ok: true }, { headers: { "set-cookie": sessionCookie("", 0) } });
   }
 
+  if (path === "/api/auth/account" && method === "DELETE") {
+    const sessionUser = await currentUser(request, env);
+    if (!sessionUser) return json({ error: "请先登录。" }, { status: 401 });
+    const body = await readJson(request);
+    const password = String(body?.password ?? "");
+    const user = await env.DB.prepare("SELECT id, password_hash, password_salt FROM game_users WHERE id = ?")
+      .bind(sessionUser.id).first();
+    const candidate = user && password
+      ? await hashPassword(password, user.password_salt)
+      : await hashPassword("invalid-password", "00".repeat(16));
+    if (!user || !password || !timingSafeEqual(candidate, user.password_hash)) {
+      return json({ error: "密码不正确，账号未删除。" }, { status: 401 });
+    }
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM game_scores WHERE user_id = ?").bind(user.id),
+      env.DB.prepare("DELETE FROM game_sessions WHERE user_id = ?").bind(user.id),
+      env.DB.prepare("DELETE FROM game_users WHERE id = ?").bind(user.id),
+    ]);
+    return json({ ok: true }, { headers: { "set-cookie": sessionCookie("", 0) } });
+  }
+
   if (path === "/api/scores" && method === "POST") {
     const user = await currentUser(request, env);
     if (!user) return json({ error: "请先登录。" }, { status: 401 });
