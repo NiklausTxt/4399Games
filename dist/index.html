@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#070b16" />
+    <meta name="description" content="专为手机优化的 2048 数字合成游戏。滑动方块，挑战 2048。" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070b16'/%3E%3Cpath d='M11 31h14V12h14v19h14v14H39v7H25v-7H11z' fill='%236fffe9'/%3E%3C/svg%3E" />
+    <title>2048 · DON'T PANIC 42</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <p class="eyebrow">DON'T PANIC 42</p>
+          <h1>2048</h1>
+        </div>
+        <div class="scoreboard" aria-label="游戏分数">
+          <div class="score-card">
+            <span>分数</span>
+            <strong id="score">0</strong>
+            <i id="score-add" aria-hidden="true"></i>
+          </div>
+          <div class="score-card">
+            <span>最佳</span>
+            <strong id="best">0</strong>
+          </div>
+        </div>
+      </header>
+
+      <section class="game-panel" aria-labelledby="game-instruction">
+        <div class="game-toolbar">
+          <p id="game-instruction">滑动数字，让相同方块合并。</p>
+          <button id="new-game" type="button">新游戏</button>
+        </div>
+
+        <div class="board-frame">
+          <div id="board" class="board" role="application" aria-label="2048 游戏棋盘" aria-describedby="game-instruction"></div>
+          <div id="game-message" class="game-message" hidden>
+            <div class="message-card">
+              <p class="message-kicker" id="message-kicker">本局结束</p>
+              <h2 id="message-title">再来一次？</h2>
+              <p id="message-copy">差一点就创造新纪录。</p>
+              <div class="message-actions">
+                <button id="keep-playing" class="secondary-action" type="button" hidden>继续挑战</button>
+                <button id="try-again" type="button">重新开始</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <span><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 也可以操作</span>
+        <span>合成 2048 即胜利</span>
+      </footer>
+    </main>
+
+    <script type="module" src="./game.js"></script>
+  </body>
+</html>
