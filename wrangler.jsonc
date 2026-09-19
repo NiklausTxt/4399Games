@@ -7,5 +7,12 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "run_worker_first": ["/wechat", "/wechat/*"]
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dontpanic42-db",
+      "database_id": "2faef611-83ff-4b28-854a-33a4aa0bda5d"
+    }
+  ]
 }
