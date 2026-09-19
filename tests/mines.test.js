@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createBoard, getNeighbors, isWin, revealCell, toggleFlag } from "../dist/minesweeper/mines.js";
+import { chordCell, createBoard, getNeighbors, isWin, revealCell, toggleFlag } from "../dist/minesweeper/mines.js";
 
 test("getNeighbors respects corners and edges", () => {
   assert.deepEqual(getNeighbors(0, 3, 3).sort((a, b) => a - b), [1, 3, 4]);
@@ -34,4 +34,37 @@ test("mine explosions and win detection are reported", () => {
 
   const solved = board.map((cell) => ({ ...cell, revealed: !cell.mine }));
   assert.equal(isWin(solved), true);
+});
+
+test("chordCell reveals neighbors only when flag count matches the number", () => {
+  const board = Array.from({ length: 9 }, (_, index) => ({
+    mine: index === 0,
+    adjacent: index === 0 ? 0 : getNeighbors(index, 3, 3).includes(0) ? 1 : 0,
+    revealed: index === 4,
+    flagged: false,
+    exploded: false,
+  }));
+  const unmatched = chordCell(board, 4, 3, 3);
+  assert.equal(unmatched.matched, false);
+  assert.equal(unmatched.revealedCount, 0);
+
+  const flagged = toggleFlag(board, 0);
+  const result = chordCell(flagged, 4, 3, 3);
+  assert.equal(result.matched, true);
+  assert.equal(result.exploded, false);
+  assert.equal(isWin(result.board), true);
+});
+
+test("chordCell explodes when the right number of flags are placed incorrectly", () => {
+  const board = Array.from({ length: 9 }, (_, index) => ({
+    mine: index === 0,
+    adjacent: index === 0 ? 0 : getNeighbors(index, 3, 3).includes(0) ? 1 : 0,
+    revealed: index === 4,
+    flagged: index === 1,
+    exploded: false,
+  }));
+  const result = chordCell(board, 4, 3, 3);
+  assert.equal(result.matched, true);
+  assert.equal(result.exploded, true);
+  assert.equal(result.board[0].exploded, true);
 });

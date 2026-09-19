@@ -83,6 +83,31 @@ export function toggleFlag(board, index) {
   return board.map((cell, cellIndex) => cellIndex === index ? { ...cell, flagged: !cell.flagged } : cell);
 }
 
+export function chordCell(board, index, rows, cols) {
+  const cell = board[index];
+  if (!cell?.revealed || cell.mine || cell.adjacent === 0) {
+    return { board, matched: false, exploded: false, revealedCount: 0 };
+  }
+  const neighbors = getNeighbors(index, rows, cols);
+  const flagCount = neighbors.filter((neighbor) => board[neighbor].flagged).length;
+  if (flagCount !== cell.adjacent) {
+    return { board, matched: false, exploded: false, revealedCount: 0 };
+  }
+
+  let next = board;
+  let revealedCount = 0;
+  for (const neighbor of neighbors) {
+    if (next[neighbor].flagged || next[neighbor].revealed) continue;
+    const result = revealCell(next, neighbor, rows, cols);
+    next = result.board;
+    revealedCount += result.revealedCount;
+    if (result.exploded) {
+      return { board: next, matched: true, exploded: true, revealedCount };
+    }
+  }
+  return { board: next, matched: true, exploded: false, revealedCount };
+}
+
 export function isWin(board) {
   return board.every((cell) => cell.mine || cell.revealed);
 }
@@ -117,6 +142,7 @@ if (typeof document !== "undefined") {
   let timer = null;
   let longPressTimer = null;
   let longPressed = false;
+  let lastNumberClick = { index: -1, time: 0 };
 
   function bestKey() { return `dontpanic42-mines-best-${difficultyKey}`; }
   function getBest() { return Number(localStorage.getItem(bestKey())) || 0; }
@@ -178,7 +204,7 @@ if (typeof document !== "undefined") {
     started = false;
     finished = false;
     seconds = 0;
-    statusNode.textContent = "点击任意格开始，首次点击一定安全";
+    statusNode.textContent = "首次点击安全；双击数字可快速展开";
     resetButton.textContent = "🙂";
     render();
   }
@@ -220,6 +246,24 @@ if (typeof document !== "undefined") {
     render();
   }
 
+  function chord(index) {
+    if (finished || !started) return;
+    const result = chordCell(board, index, config.rows, config.cols);
+    if (!result.matched) {
+      if (board[index]?.revealed && board[index]?.adjacent) {
+        statusNode.textContent = `周围需插 ${board[index].adjacent} 面旗，才能快速展开`;
+      }
+      return;
+    }
+    board = result.board;
+    if (result.exploded) finishGame(false);
+    else if (isWin(board)) finishGame(true);
+    else {
+      statusNode.textContent = "已展开确定安全的相邻格";
+      render();
+    }
+  }
+
   boardNode.addEventListener("click", (event) => {
     const cell = event.target.closest(".mine-cell");
     if (!cell || longPressed) {
@@ -227,8 +271,27 @@ if (typeof document !== "undefined") {
       return;
     }
     const index = Number(cell.dataset.index);
-    if (flagMode) flag(index);
-    else reveal(index);
+    if (flagMode) {
+      flag(index);
+      return;
+    }
+    if (board[index]?.revealed && board[index]?.adjacent) {
+      const now = Date.now();
+      if (lastNumberClick.index === index && now - lastNumberClick.time <= 360) {
+        chord(index);
+        lastNumberClick = { index: -1, time: 0 };
+      } else {
+        lastNumberClick = { index, time: now };
+      }
+      return;
+    }
+    reveal(index);
+  });
+
+  boardNode.addEventListener("dblclick", (event) => {
+    const cell = event.target.closest(".mine-cell");
+    if (!cell) return;
+    event.preventDefault();
   });
 
   boardNode.addEventListener("contextmenu", (event) => {
