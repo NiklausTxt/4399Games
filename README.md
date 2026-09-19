@@ -1,6 +1,12 @@
 # 2048 · DON'T PANIC 42
 
-一个为手机浏览器设计的 2048 小游戏，准备部署到 Cloudflare Workers，并通过 `dontpanic42.top` 访问。
+一个部署在 Cloudflare Workers 上的个人项目首页和手机端 2048 小游戏。
+
+## 路由
+
+- `/`：DON'T PANIC 42 个人数字实验室首页
+- `/2048/`：手机端 2048 游戏
+- `/wechat`：微信公众号验证与自动回复接口
 
 ## 功能
 
@@ -39,7 +45,7 @@ npm run check
 npm run deploy
 ```
 
-静态游戏由 Assets 提供；只有 `/wechat` 会先进入 Worker。配置中同时保留了现有 `DB` → `dontpanic42-db` 的 D1 绑定。部署前请确认 `dontpanic42.top` 的自定义域名仍绑定到 `dontpanic42-site`。
+首页和游戏由 Assets 提供；只有 `/wechat` 会先进入 Worker。配置中同时保留了现有 `DB` → `dontpanic42-db` 的 D1 绑定。部署前请确认 `dontpanic42.top` 的自定义域名仍绑定到 `dontpanic42-site`。
 
 仓库已连接 Cloudflare Workers Builds；向 `main` 分支推送提交会自动触发生产部署。
 

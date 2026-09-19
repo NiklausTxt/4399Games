@@ -2,61 +2,132 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#070b16" />
-    <meta name="description" content="专为手机优化的 2048 数字合成游戏。滑动方块，挑战 2048。" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070b16'/%3E%3Cpath d='M11 31h14V12h14v19h14v14H39v7H25v-7H11z' fill='%236fffe9'/%3E%3C/svg%3E" />
-    <title>2048 · DON'T PANIC 42</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080b14" />
+    <meta name="description" content="DON'T PANIC 42：个人工具、公众号助手与实验项目。" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080b14'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-size='34' font-family='system-ui' font-weight='800' fill='%2391a7ff'%3E42%3C/text%3E%3C/svg%3E" />
+    <title>DON'T PANIC 42</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: #f5f7ff;
+        background:
+          radial-gradient(circle at 20% 20%, #263a75 0, transparent 35%),
+          radial-gradient(circle at 80% 70%, #3b1f62 0, transparent 35%),
+          #080b14;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      main {
+        width: min(960px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 90px 0 60px;
+      }
+      .tag {
+        display: inline-block;
+        padding: 7px 12px;
+        color: #b9c8ff;
+        background: rgba(116, 143, 255, 0.12);
+        border: 1px solid rgba(150, 170, 255, 0.25);
+        border-radius: 999px;
+        font-size: 14px;
+      }
+      h1 {
+        max-width: 760px;
+        margin: 24px 0 18px;
+        font-size: clamp(44px, 8vw, 82px);
+        line-height: 1.02;
+        letter-spacing: -3px;
+      }
+      .accent { color: #91a7ff; }
+      .intro {
+        max-width: 640px;
+        color: #b9bfd1;
+        font-size: 18px;
+        line-height: 1.8;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 58px;
+      }
+      .card {
+        min-height: 190px;
+        padding: 24px;
+        background: rgba(255, 255, 255, 0.055);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 22px;
+        backdrop-filter: blur(14px);
+      }
+      .card-link {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+        transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+      }
+      .card-link:hover,
+      .card-link:focus-visible {
+        transform: translateY(-4px);
+        border-color: rgba(145, 167, 255, 0.6);
+        background: rgba(116, 143, 255, 0.12);
+        outline: none;
+      }
+      .icon { font-size: 30px; }
+      .card h2 { margin: 18px 0 8px; font-size: 20px; }
+      .card p { margin: 0; color: #9da5ba; line-height: 1.65; }
+      .launch {
+        display: inline-block;
+        margin-top: 18px;
+        color: #b9c8ff;
+        font-size: 14px;
+        font-weight: 700;
+      }
+      footer {
+        margin-top: 70px;
+        color: #70798e;
+        font-size: 14px;
+      }
+      @media (max-width: 720px) {
+        main { padding-top: 60px; }
+        h1 { letter-spacing: -2px; }
+        .grid { grid-template-columns: 1fr; margin-top: 40px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .card-link { transition: none; }
+      }
+    </style>
   </head>
   <body>
-    <main class="app-shell">
-      <header class="topbar">
-        <div class="brand-block">
-          <p class="eyebrow">DON'T PANIC 42</p>
-          <h1>2048</h1>
-        </div>
-        <div class="scoreboard" aria-label="游戏分数">
-          <div class="score-card">
-            <span>分数</span>
-            <strong id="score">0</strong>
-            <i id="score-add" aria-hidden="true"></i>
-          </div>
-          <div class="score-card">
-            <span>最佳</span>
-            <strong id="best">0</strong>
-          </div>
-        </div>
-      </header>
+    <main>
+      <span class="tag">dontpanic42.top</span>
+      <h1>别慌，<br /><span class="accent">答案总会出现。</span></h1>
+      <p class="intro">
+        这里是 DON'T PANIC 42，一个正在生长的个人数字实验室。
+        我会在这里发布实用工具、公众号助手和一些有趣的小项目。
+      </p>
 
-      <section class="game-panel" aria-labelledby="game-instruction">
-        <div class="game-toolbar">
-          <p id="game-instruction">滑动数字，让相同方块合并。</p>
-          <button id="new-game" type="button">新游戏</button>
-        </div>
-
-        <div class="board-frame">
-          <div id="board" class="board" role="application" aria-label="2048 游戏棋盘" aria-describedby="game-instruction"></div>
-          <div id="game-message" class="game-message" hidden>
-            <div class="message-card">
-              <p class="message-kicker" id="message-kicker">本局结束</p>
-              <h2 id="message-title">再来一次？</h2>
-              <p id="message-copy">差一点就创造新纪录。</p>
-              <div class="message-actions">
-                <button id="keep-playing" class="secondary-action" type="button" hidden>继续挑战</button>
-                <button id="try-again" type="button">重新开始</button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <section class="grid" aria-label="项目入口">
+        <article class="card">
+          <div class="icon">💬</div>
+          <h2>公众号助手</h2>
+          <p>智能回复、信息收藏与便捷查询功能正在建设中。</p>
+        </article>
+        <a class="card card-link" href="/2048/">
+          <div class="icon">🎮</div>
+          <h2>2048</h2>
+          <p>滑动数字、合并方块，在手机上挑战 2048。</p>
+          <span class="launch">开始游戏 →</span>
+        </a>
+        <article class="card">
+          <div class="icon">🧪</div>
+          <h2>实验项目</h2>
+          <p>记录想法，验证创意，并持续迭代有趣的产品。</p>
+        </article>
       </section>
 
-      <footer>
-        <span><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 也可以操作</span>
-        <span>合成 2048 即胜利</span>
-      </footer>
+      <footer>© 2026 DON'T PANIC 42 · Built on Cloudflare</footer>
     </main>
-
-    <script type="module" src="./game.js"></script>
   </body>
 </html>
