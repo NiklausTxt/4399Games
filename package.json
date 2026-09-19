@@ -1,0 +1,15 @@
+{
+  "name": "dontpanic42-2048",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx wrangler dev",
+    "test": "node --test tests/*.test.js",
+    "check": "node --check dist/game.js && node --check worker/index.js",
+    "deploy": "npx wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.38.0"
+  }
+}
