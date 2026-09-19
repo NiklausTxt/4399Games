@@ -2,6 +2,10 @@ const SIZE = 4;
 const STORAGE_KEY = "dontpanic42-2048-state-v1";
 const BEST_KEY = "dontpanic42-2048-best-v1";
 
+function makeGameId() {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
 export function createEmptyGrid() {
   return Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
 }
@@ -95,7 +99,12 @@ function loadState() {
       Array.isArray(saved?.grid) && saved.grid.length === SIZE &&
       saved.grid.every((row) => Array.isArray(row) && row.length === SIZE && row.every(Number.isFinite))
     ) {
-      return { grid: saved.grid, score: Number(saved.score) || 0, wonShown: Boolean(saved.wonShown) };
+      return {
+        grid: saved.grid,
+        score: Number(saved.score) || 0,
+        wonShown: Boolean(saved.wonShown),
+        gameId: /^[0-9a-z-]{8,64}$/i.test(saved.gameId) ? saved.gameId : makeGameId(),
+      };
     }
   } catch { /* Corrupt local state falls back to a fresh game. */ }
   return null;
@@ -105,7 +114,7 @@ function initialState() {
   let grid = createEmptyGrid();
   grid = addRandomTile(grid);
   grid = addRandomTile(grid);
-  return { grid, score: 0, wonShown: false };
+  return { grid, score: 0, wonShown: false, gameId: makeGameId() };
 }
 
 if (typeof document !== "undefined") {
@@ -118,10 +127,87 @@ if (typeof document !== "undefined") {
   const messageTitle = document.querySelector("#message-title");
   const messageCopy = document.querySelector("#message-copy");
   const keepPlayingButton = document.querySelector("#keep-playing");
+  const accountStatus = document.querySelector("#account-status");
+  const syncStatus = document.querySelector("#sync-status");
+  const accountAction = document.querySelector("#account-action");
+  const logoutButton = document.querySelector("#logout");
+  const authModal = document.querySelector("#auth-modal");
+  const authClose = document.querySelector("#auth-close");
+  const authForm = document.querySelector("#auth-form");
+  const authTitle = document.querySelector("#auth-title");
+  const authSubmit = document.querySelector("#auth-submit");
+  const authError = document.querySelector("#auth-error");
+  const usernameInput = document.querySelector("#username");
+  const passwordInput = document.querySelector("#password");
+  const loginTab = document.querySelector("#login-tab");
+  const registerTab = document.querySelector("#register-tab");
 
   let state = loadState() || initialState();
   let best = Math.max(Number(localStorage.getItem(BEST_KEY)) || 0, state.score);
   let touchStart = null;
+  let auth = null;
+  let authMode = "login";
+  let syncTimer = null;
+
+  async function api(path, options = {}) {
+    const response = await fetch(path, {
+      ...options,
+      credentials: "same-origin",
+      headers: options.body ? { "content-type": "application/json", ...options.headers } : options.headers,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "请求失败，请稍后再试。");
+    return data;
+  }
+
+  function applyAuth(data) {
+    auth = data?.loggedIn ? data : null;
+    if (!auth) {
+      accountStatus.textContent = "游客模式";
+      syncStatus.textContent = "登录后可跨设备保存成绩";
+      accountAction.hidden = false;
+      logoutButton.hidden = true;
+      return;
+    }
+    best = Math.max(best, Number(auth.stats?.bestScore) || 0, state.score);
+    localStorage.setItem(BEST_KEY, String(best));
+    accountStatus.textContent = auth.user.username;
+    syncStatus.textContent = `云端最佳 ${Number(auth.stats?.bestScore) || 0} · 已完成 ${Number(auth.stats?.gamesPlayed) || 0} 局`;
+    accountAction.hidden = true;
+    logoutButton.hidden = false;
+    render();
+  }
+
+  async function loadAuth() {
+    try {
+      const data = await api("/api/auth/me");
+      applyAuth(data);
+      if (data.loggedIn) await syncScore(false);
+    } catch {
+      syncStatus.textContent = "云端服务暂时不可用，本机存档不受影响";
+    }
+  }
+
+  async function syncScore(completed = false) {
+    if (!auth) return;
+    try {
+      syncStatus.textContent = "正在同步…";
+      const data = await api("/api/scores", {
+        method: "POST",
+        body: JSON.stringify({ gameId: state.gameId, score: state.score, completed }),
+      });
+      applyAuth(data);
+    } catch (error) {
+      if (error.message === "请先登录。") applyAuth(null);
+      else syncStatus.textContent = "同步失败，将在下次操作时重试";
+    }
+  }
+
+  function queueSync() {
+    if (!auth) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => syncScore(false), 700);
+  }
 
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -157,9 +243,11 @@ if (typeof document !== "undefined") {
   }
 
   function startNewGame() {
+    if (state.score > 0) void syncScore(true);
     state = initialState();
     hideMessage();
     save();
+    queueSync();
     render();
   }
 
@@ -186,8 +274,10 @@ if (typeof document !== "undefined") {
       showMessage("won");
     } else if (!canMove(state.grid)) {
       showMessage("lost");
+      void syncScore(true);
     }
     save();
+    queueSync();
   }
 
   const keyDirections = {
@@ -227,6 +317,69 @@ if (typeof document !== "undefined") {
     save();
   });
 
+  function setAuthMode(mode) {
+    authMode = mode;
+    const registering = mode === "register";
+    authTitle.textContent = registering ? "创建账号" : "登录";
+    authSubmit.textContent = registering ? "注册并同步" : "登录并同步";
+    passwordInput.autocomplete = registering ? "new-password" : "current-password";
+    loginTab.classList.toggle("active", !registering);
+    registerTab.classList.toggle("active", registering);
+    loginTab.setAttribute("aria-selected", String(!registering));
+    registerTab.setAttribute("aria-selected", String(registering));
+    authError.hidden = true;
+  }
+
+  function openAuth() {
+    authModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    setAuthMode("login");
+    setTimeout(() => usernameInput.focus(), 0);
+  }
+
+  function closeAuth() {
+    authModal.hidden = true;
+    document.body.style.overflow = "";
+    authForm.reset();
+    authError.hidden = true;
+  }
+
+  accountAction.addEventListener("click", openAuth);
+  authClose.addEventListener("click", closeAuth);
+  authModal.addEventListener("click", (event) => { if (event.target === authModal) closeAuth(); });
+  loginTab.addEventListener("click", () => setAuthMode("login"));
+  registerTab.addEventListener("click", () => setAuthMode("register"));
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !authModal.hidden) closeAuth(); });
+
+  authForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    authError.hidden = true;
+    authSubmit.disabled = true;
+    authSubmit.textContent = authMode === "register" ? "正在注册…" : "正在登录…";
+    try {
+      const data = await api(`/api/auth/${authMode}`, {
+        method: "POST",
+        body: JSON.stringify({ username: usernameInput.value, password: passwordInput.value }),
+      });
+      applyAuth(data);
+      closeAuth();
+      await syncScore(false);
+    } catch (error) {
+      authError.textContent = error.message;
+      authError.hidden = false;
+    } finally {
+      authSubmit.disabled = false;
+      authSubmit.textContent = authMode === "register" ? "注册并同步" : "登录并同步";
+    }
+  });
+
+  logoutButton.addEventListener("click", async () => {
+    await syncScore(false);
+    try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } catch { /* Local play remains available. */ }
+    applyAuth(null);
+  });
+
   render();
   if (!canMove(state.grid)) showMessage("lost");
+  void loadAuth();
 }

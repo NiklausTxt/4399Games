@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { addRandomTile, canMove, createEmptyGrid, moveGrid, slideLine } from "../dist/game.js";
+import { validateCredentials } from "../worker/index.js";
 
 test("slideLine merges each pair once", () => {
   assert.deepEqual(slideLine([2, 2, 2, 2]), { line: [4, 4, 0, 0], gained: 8 });
@@ -47,4 +48,14 @@ test("canMove detects full terminal boards", () => {
     [2, 8, 2, 4],
     [4, 2, 4, 2],
   ]), true);
+});
+
+test("validateCredentials accepts supported usernames and rejects weak input", () => {
+  assert.deepEqual(validateCredentials(" 玩家_42 ", "correct-horse"), {
+    username: "玩家_42",
+    password: "correct-horse",
+  });
+  assert.match(validateCredentials("ab", "correct-horse").error, /3–24/);
+  assert.match(validateCredentials("valid_name", "short").error, /8–72/);
+  assert.match(validateCredentials("bad name", "correct-horse").error, /只能包含/);
 });

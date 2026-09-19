@@ -13,6 +13,8 @@
 - 手指上下左右滑动，桌面端也支持方向键
 - 实时分数与本机最佳成绩
 - 自动保存当前局面，刷新页面可以继续
+- 可选用户名/密码注册登录，登录后将每局成绩保存至 Cloudflare D1
+- 跨设备同步云端最佳成绩，并保留游客本机存档
 - 胜利和无路可走状态提示
 - 保留已有的微信公众号 `/wechat` 验证与自动回复接口
 - 响应式布局，适配窄屏、刘海屏和横向空间有限的设备
@@ -45,10 +47,12 @@ npm run check
 npm run deploy
 ```
 
-首页和游戏由 Assets 提供；只有 `/wechat` 会先进入 Worker。配置中同时保留了现有 `DB` → `dontpanic42-db` 的 D1 绑定。部署前请确认 `dontpanic42.top` 的自定义域名仍绑定到 `dontpanic42-site`。
+首页和游戏由 Assets 提供；`/wechat` 与 `/api/*` 会先进入 Worker。配置中保留了现有 `DB` → `dontpanic42-db` 的 D1 绑定。认证接口首次请求时会幂等创建 `users`、`sessions` 和 `scores` 表；相同结构也保存在 `migrations/0001_auth_and_scores.sql`，便于审查和手动迁移。部署前请确认 `dontpanic42.top` 的自定义域名仍绑定到 `dontpanic42-site`。
 
 仓库已连接 Cloudflare Workers Builds；向 `main` 分支推送提交会自动触发生产部署。
 
 ## 凭证安全
 
 仓库不包含 Token、账号或密钥。`WECHAT_TOKEN` 只从 Cloudflare 的运行时 Secret `env.WECHAT_TOKEN` 读取，并用于校验微信请求签名。
+
+用户密码不会明文存储：Worker 使用随机盐和 PBKDF2-SHA-256 派生密码摘要。登录会话使用 256 位随机令牌，浏览器仅通过 `Secure`、`HttpOnly`、`SameSite=Lax` Cookie 持有原始令牌，D1 只保存令牌的 SHA-256 摘要。会话有效期为 30 天，退出登录会立即删除对应会话。

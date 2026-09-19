@@ -29,6 +29,17 @@
         </div>
       </header>
 
+      <section class="account-bar" aria-label="账号状态">
+        <div>
+          <strong id="account-status">游客模式</strong>
+          <small id="sync-status">登录后可跨设备保存成绩</small>
+        </div>
+        <div class="account-actions">
+          <button id="account-action" class="secondary-action compact-action" type="button">登录 / 注册</button>
+          <button id="logout" class="text-action" type="button" hidden>退出</button>
+        </div>
+      </section>
+
       <section class="game-panel" aria-labelledby="game-instruction">
         <div class="game-toolbar">
           <p id="game-instruction">滑动数字，让相同方块合并。</p>
@@ -56,6 +67,27 @@
         <span>合成 2048 即胜利</span>
       </footer>
     </main>
+
+    <div id="auth-modal" class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" hidden>
+      <div class="auth-card">
+        <button id="auth-close" class="icon-action" type="button" aria-label="关闭登录窗口">×</button>
+        <p class="message-kicker">云端存档</p>
+        <h2 id="auth-title">登录</h2>
+        <div class="auth-tabs" role="tablist" aria-label="登录或注册">
+          <button id="login-tab" class="auth-tab active" type="button" role="tab" aria-selected="true">登录</button>
+          <button id="register-tab" class="auth-tab" type="button" role="tab" aria-selected="false">注册</button>
+        </div>
+        <form id="auth-form">
+          <label for="username">用户名</label>
+          <input id="username" name="username" autocomplete="username" minlength="3" maxlength="24" required />
+          <label for="password">密码</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="72" required />
+          <p id="auth-error" class="auth-error" role="alert" hidden></p>
+          <button id="auth-submit" type="submit">登录并同步</button>
+        </form>
+        <p class="auth-note">密码经过安全派生后存储；登录为可选项，游客也能正常游戏。</p>
+      </div>
+    </div>
 
     <script type="module" src="../game.js"></script>
   </body>
