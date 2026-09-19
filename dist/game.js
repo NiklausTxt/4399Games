@@ -155,8 +155,15 @@ if (typeof document !== "undefined") {
       credentials: "same-origin",
       headers: options.body ? { "content-type": "application/json", ...options.headers } : options.headers,
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "请求失败，请稍后再试。");
+    const responseText = await response.text();
+    let data = {};
+    try { data = responseText ? JSON.parse(responseText) : {}; } catch { /* Cloudflare may return a plain-text platform error. */ }
+    if (!response.ok) {
+      const platformMessage = responseText.includes("1102") || responseText.includes("resource limits")
+        ? "服务计算资源暂时不足，请稍后再试。"
+        : "请求失败，请稍后再试。";
+      throw new Error(data.error || platformMessage);
+    }
     return data;
   }
 

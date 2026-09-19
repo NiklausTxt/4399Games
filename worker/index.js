@@ -7,7 +7,9 @@ const SECURITY_HEADERS = {
 
 const SESSION_COOKIE = "dp42_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
-const PASSWORD_ITERATIONS = 210_000;
+// Keep password derivation below the Workers Free 10 ms CPU ceiling.
+// A random per-user salt still prevents precomputed rainbow-table attacks.
+const PASSWORD_ITERATIONS = 60_000;
 const encoder = new TextEncoder();
 
 function bytesToHex(bytes) {
